@@ -1,0 +1,53 @@
+
+model {
+
+# Priors
+alpha.psi ~ dnorm(0, 0.01)
+#beta1.psi ~ dnorm(0, 0.01) # distwater sitecov 1
+#beta2.psi ~ dnorm(0, 0.01) # distEdge
+#beta3.psi ~ dnorm(0, 0.01) # elevation sitecov 3
+#beta4.psi ~ dnorm(0, 0.01) # slope 4
+#beta5.psi ~ dnorm(0, 0.01) # basalArea 5
+#beta6.psi ~ dnorm(0, 0.01) # treeDensity 6
+#beta7.psi ~ dnorm(0, 0.01) # biomass_pp (priorprey) 7
+#beta8.psi ~ dnorm(0, 0.01) # biomass_sp (smallprey) 8
+#beta9.psi ~ dnorm(0, 0.01) # fire 9
+#beta10.psi ~ dnorm(0, 0.01) #landcover 10
+
+
+alpha.p ~ dnorm(0, 0.01)
+#beta11.p ~ dnorm(0, 0.01) ## block
+beta1.p ~ dnorm(0, 0.01) ##distwater sitecov # 
+beta5.p ~ dnorm(0, 0.01) ##basalArea
+beta2.p ~ dnorm(0, 0.01)##distEdge
+beta3.p ~ dnorm(0, 0.01) ##elevation
+beta7.p ~ dnorm(0, 0.01)##biomass_pp (priorprey) 7 #glm analysis indicated biomass_pp related to dist_water
+beta8.p ~ dnorm(0, 0.01)##biomass_sp (smallprey) 8 #glm analysis indicated biomass_sp related to basal area and elevation
+
+
+
+# Likelihood
+# Ecological model for the partially observed true state
+for (i in 1:R) {
+   z[i] ~ dbern(psi[i])                # True occurrence z at site i
+   psi[i] <- 1 / (1 + exp(-lpsi.lim[i]))
+   lpsi.lim[i] <- min(999, max(-999, lpsi[i]))
+lpsi[i] <- alpha.psi 
+ 
+   # Observation model for the observations
+   for (j in 1:T) {
+      y[i,j] ~ dbern(mu.p[i,j])	# Detection-nondetection at i and j
+      mu.p[i,j] <- z[i] * p[i,j]
+      p[i,j] <- 1 / (1 + exp(-lp.lim[i,j]))
+      lp.lim[i,j] <- min(999, max(-999, lp[i,j]))
+    ## lp[i,j] <- alpha.p 
+ lp[i,j] <- alpha.p + beta1.p*distWater[i] + beta2.p*distEdge[i] + beta3.p*elevation[i] + beta5.p*basalArea[i] + beta2.p*distEdge[i] + beta7.p*biomass_pp[i] + beta8.p*biomass_sp [i]
+   
+      } #j
+   } #i
+
+# Derived quantities
+occ.fs <- sum(z[])                             # Number of occupied sites
+mean.p <- exp(alpha.p) / (1 + exp(alpha.p))    # Sort of average detection
+}
+
